@@ -1,16 +1,18 @@
 # import mgi.settings as settings
 # from django import test
+import json
+import os
 import unittest as test
-import os, pdb, json
+
 from django.test import Client
 from mongoengine import connect
 
 if 'DJANGO_SETTINGS_MODULE' not in os.environ:
     os.environ['DJANGO_SETTINGS_MODULE'] = 'xmltemplate.settings'
-from xmltemplate import models
 from xmltemplate import api
 
 datadir = os.path.join(os.path.dirname(__file__), "data")
+
 
 class TestAllSchemaDocs(test.TestCase):
 
@@ -31,7 +33,7 @@ class TestAllSchemaDocs(test.TestCase):
         client = Client()
         res = client.get('/schemas/')
         self.assertEqual(res.status_code, 200)
-        
+
         self.assertEqual(res.content, '[]')
         data = json.loads(res.content)
         self.assertEqual(len(data), 0)
@@ -71,8 +73,8 @@ class TestAllSchemaDocs(test.TestCase):
         self.assertEqual(data['location'], filename)
         self.assertEqual(data['description'], '4R lab')
         self.assertEqual(data['version'], 1)
-        
-        #pdb.set_trace()
+
+        # pdb.set_trace()
         res = client.post('/schemas/?name=lab&description=4Rlab' +
                           '&location=mylab.xsd', content_type='application/xml',
                           data=content)
@@ -89,12 +91,12 @@ class TestAllSchemaDocs(test.TestCase):
         self.assertEqual(len(data), 2)
         self.assertIn('mylab', data)
         self.assertIn('lab', data)
-        
+
     def test_missing_name(self):
         client = Client()
         filename = "mylab.xsd"
         content = self.get_file_content(filename)
-        data = json.dumps({'location': filename, 
+        data = json.dumps({'location': filename,
                            'description': "4R lab", 'content': content})
         res = client.post('/schemas/', content_type='application/json',
                           data=data)
@@ -103,7 +105,7 @@ class TestAllSchemaDocs(test.TestCase):
         self.assertFalse(data['ok'])
         self.assertIn("Missing", data['message'])
         self.assertIn("name", data['message'])
-        
+
     def test_missing_content(self):
         client = Client()
         data = json.dumps({'name': "mylab", 'description': "4R lab"})
@@ -114,7 +116,7 @@ class TestAllSchemaDocs(test.TestCase):
         self.assertFalse(data['ok'])
         self.assertIn("Missing", data['message'])
         self.assertIn("content", data['message'])
-        
+
         data = json.dumps({'name': "mylab",
                            'description': "4R lab", 'content': ''})
         res = client.post('/schemas/', content_type='application/json',
@@ -123,7 +125,7 @@ class TestAllSchemaDocs(test.TestCase):
         data = json.loads(res.content)
         self.assertFalse(data['ok'])
         self.assertIn("content", data['message'])
-        
+
     def test_repost(self):
         client = Client()
 
@@ -135,13 +137,13 @@ class TestAllSchemaDocs(test.TestCase):
                           data=data)
         rdata = json.loads(res.content)
         self.assertTrue(rdata['ok'])
-                          
+
         res = client.post('/schemas/', content_type='application/json',
                           data=data)
         rdata = json.loads(res.content)
         self.assertFalse(rdata['ok'])
         self.assertEqual(res.status_code, 409)
-        
+
     def test_badxml(self):
         client = Client()
 
@@ -164,16 +166,15 @@ class TestAllSchemaDocs(test.TestCase):
         data = json.dumps({'location': filename, 'name': "mylab",
                            'description': "4R lab", 'content': content})
         res = client.put('/schemas/', content_type='application/json',
-                          data=data)
+                         data=data)
         self.assertEqual(res.status_code, 405)
 
         res = client.patch('/schemas/', content_type='application/json',
-                          data=data)
+                           data=data)
         self.assertEqual(res.status_code, 405)
 
         res = client.delete('/schemas/')
         self.assertEqual(res.status_code, 405)
-
 
 
 class TestSchemaDoc(test.TestCase):
@@ -195,7 +196,7 @@ class TestSchemaDoc(test.TestCase):
         client = Client()
         res = client.get('/schemas/mylab')
         self.assertEqual(res.status_code, 404)
-        
+
         filename = "mylab.xsd"
         content = self.get_file_content(filename)
         summ = api.loadSchemaDoc(content, "mylab", filename)
@@ -217,11 +218,11 @@ class TestSchemaDoc(test.TestCase):
         client = Client()
         res = client.get('/schemas/mylab')
         self.assertEqual(res.status_code, 404)
-        
+
         filename = "mylab.xsd"
         content = self.get_file_content(filename)
 
-        data = json.dumps({'location': filename, 
+        data = json.dumps({'location': filename,
                            'about': "4R lab", 'content': content})
         res = client.put('/schemas/mylab', content_type='application/json',
                          data=data)
@@ -232,7 +233,7 @@ class TestSchemaDoc(test.TestCase):
         self.assertEqual(rdata['description'], '4R lab')
         self.assertEqual(rdata['version'], 1)
         self.assertTrue(rdata['is_current'])
-        
+
         res = client.put('/schemas/exp?about=4Rlab&location=mylab.xsd',
                          content_type='application/xml', data=content)
         rdata = json.loads(res.content)
@@ -242,7 +243,7 @@ class TestSchemaDoc(test.TestCase):
         self.assertEqual(rdata['description'], '4Rlab')
         self.assertEqual(rdata['version'], 1)
         self.assertTrue(rdata['is_current'])
-        
+
         filename = "experiments.xsd"
         content = self.get_file_content(filename)
         res = client.put('/schemas/exp?about=next&location=exp.xsd',
@@ -255,13 +256,13 @@ class TestSchemaDoc(test.TestCase):
         self.assertEqual(rdata['version_comment'], 'next')
         self.assertEqual(rdata['version'], 2)
         self.assertTrue(rdata['is_current'])
-        
+
     def test_post(self):
         client = Client()
         filename = "mylab.xsd"
         content = self.get_file_content(filename)
 
-        data = json.dumps({'location': filename, 
+        data = json.dumps({'location': filename,
                            'about': "4R lab", 'content': content})
         res = client.put('/schemas/mylab', content_type='application/json',
                          data=data)
@@ -272,11 +273,11 @@ class TestSchemaDoc(test.TestCase):
         self.assertEqual(rdata['description'], '4R lab')
         self.assertEqual(rdata['version'], 1)
         self.assertTrue(rdata['is_current'])
-        
+
         filename = "experiments.xsd"
         content = self.get_file_content(filename)
         res = client.post('/schemas/mylab?about=next&location=mylab.xsd',
-                         content_type='application/xml', data=content)
+                          content_type='application/xml', data=content)
         rdata = json.loads(res.content)
         self.assertTrue(rdata['ok'])
         self.assertEqual(rdata['name'], 'mylab')
@@ -291,7 +292,7 @@ class TestSchemaDoc(test.TestCase):
         filename = "mylab.xsd"
         content = self.get_file_content(filename)
 
-        data = json.dumps({'location': filename, 
+        data = json.dumps({'location': filename,
                            'about': "4R lab", 'content': content})
         res = client.put('/schemas/mylab', content_type='application/json',
                          data=data)
@@ -315,7 +316,7 @@ class TestSchemaDoc(test.TestCase):
         filename = "mylab.xsd"
         content = self.get_file_content(filename)
 
-        data = json.dumps({'location': filename, 
+        data = json.dumps({'location': filename,
                            'about': "4R lab", 'content': content})
         res = client.put('/schemas/mylab', content_type='application/json',
                          data=data)
@@ -324,6 +325,7 @@ class TestSchemaDoc(test.TestCase):
 
         res = client.delete('/schemas/mylab')
         self.assertEqual(res.status_code, 405)
+
 
 class TestSchemaDocVersion(test.TestCase):
 
@@ -344,7 +346,7 @@ class TestSchemaDocVersion(test.TestCase):
         client = Client()
         res = client.get('/schemas/mylab/1')
         self.assertEqual(res.status_code, 404)
-        
+
         filename = "mylab.xsd"
         content = self.get_file_content(filename)
         summ = api.loadSchemaDoc(content, "mylab", filename)
@@ -375,13 +377,13 @@ class TestSchemaDocVersion(test.TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res['CONTENT-TYPE'], 'application/xml')
         self.assertIn('<?xml', res.content)
-        
+
     def test_delete(self):
         client = Client()
         filename = "mylab.xsd"
         content = self.get_file_content(filename)
 
-        data = json.dumps({'location': filename, 
+        data = json.dumps({'location': filename,
                            'about': "4R lab", 'content': content})
         res = client.put('/schemas/mylab', content_type='application/json',
                          data=data)
@@ -392,7 +394,7 @@ class TestSchemaDocVersion(test.TestCase):
         self.assertEqual(rdata['description'], '4R lab')
         self.assertEqual(rdata['version'], 1)
         self.assertTrue(rdata['is_current'])
-        
+
         res = client.delete('/schemas/mylab/1')
         self.assertEqual(res.status_code, 200)
         res = client.get('/schemas/mylab?view=versions')
@@ -404,7 +406,7 @@ class TestSchemaDocVersion(test.TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.content, "[1]")
 
-        #pdb.set_trace()
+        # pdb.set_trace()
         filename = "experiments.xsd"
         content = self.get_file_content(filename)
         res = client.post('/schemas/mylab', content_type='application/xml',
@@ -443,7 +445,7 @@ class TestSchemaDocVersion(test.TestCase):
         filename = "mylab.xsd"
         content = self.get_file_content(filename)
 
-        data = json.dumps({'location': filename, 
+        data = json.dumps({'location': filename,
                            'about': "4R lab", 'content': content})
         res = client.put('/schemas/mylab', content_type='application/json',
                          data=data)
@@ -454,7 +456,7 @@ class TestSchemaDocVersion(test.TestCase):
         self.assertEqual(rdata['description'], '4R lab')
         self.assertEqual(rdata['version'], 1)
         self.assertTrue(rdata['is_current'])
-        
+
         filename = "experiments.xsd"
         content = self.get_file_content(filename)
         res = client.post('/schemas/mylab', content_type='application/xml',
@@ -488,7 +490,7 @@ class TestSchemaDocVersion(test.TestCase):
         filename = "mylab.xsd"
         content = self.get_file_content(filename)
 
-        data = json.dumps({'location': filename, 
+        data = json.dumps({'location': filename,
                            'about': "4R lab", 'content': content})
         res = client.put('/schemas/mylab', content_type='application/json',
                          data=data)
@@ -514,13 +516,13 @@ class TestSchemaDocVersion(test.TestCase):
         rdata = json.loads(res.content)
         self.assertEqual(rdata['location'], 'here')
         self.assertEqual(rdata['version_comment'], 'first')
-        
+
     def test_badmethod(self):
         client = Client()
         filename = "mylab.xsd"
         content = self.get_file_content(filename)
 
-        data = json.dumps({'location': filename, 
+        data = json.dumps({'location': filename,
                            'about': "4R lab", 'content': content})
         res = client.put('/schemas/mylab', content_type='application/json',
                          data=data)
@@ -534,6 +536,7 @@ class TestSchemaDocVersion(test.TestCase):
         res = client.post('/schemas/mylab/1', content_type='application/json',
                           data=data)
         self.assertEqual(res.status_code, 405)
+
 
 class TestSchemaComponents(test.TestCase):
 
@@ -555,7 +558,7 @@ class TestSchemaComponents(test.TestCase):
         filename = "mylab.xsd"
         content = self.get_file_content(filename)
 
-        data = json.dumps({'location': filename, 
+        data = json.dumps({'location': filename,
                            'about': "4R lab", 'content': content})
         res = client.put('/schemas/mylab', content_type='application/json',
                          data=data)
@@ -567,33 +570,37 @@ class TestSchemaComponents(test.TestCase):
         rdata = json.loads(res.content)
         self.assertEqual(len(rdata), 1)
         self.assertEqual(rdata, ['MyLab'])
-                
+
         res = client.get('/schemas/mylab/1/elements')
         self.assertEqual(res.status_code, 200)
         rdata = json.loads(res.content)
         self.assertEqual(len(rdata), 1)
         self.assertEqual(rdata, ['MyLab'])
-                
+
         res = client.get('/schemas/mylab/2/elements')
         self.assertEqual(res.status_code, 404)
 
+
 def setUpMongo():
     return connect(host=os.environ['MONGO_TESTDB_URL'])
+
 
 def tearDownMongo(mc):
     try:
         db = mc.get_default_database()
         mc.drop_database(db.name)
-    except Exception, ex:
+    except Exception as ex:
         pass
 
-    
+
 TESTS = "TestAllSchemaDocs".split()
+
 
 def test_suite():
     suite = test.TestSuite()
     suite.addTests([test.makeSuite(TestLoadSchemaDco)])
     return suite
+
 
 if __name__ == '__main__':
     test.main()

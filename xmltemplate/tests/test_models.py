@@ -1,23 +1,24 @@
 # import mgi.settings as settings
 # from django import test
+import os
 import unittest as test
-import os, pdb
-from mongoengine import connect
 
-from xmltemplate import models
+from mongoengine import connect
 from xmltemplate.models import RECORD
-#from mgi import settings
+from xmltemplate import models
+
+# from mgi import settings
 
 def setUpMongo():
     return connect(host=os.environ['MONGO_TESTDB_URL'])
+
 
 def tearDownMongo(mc):
     try:
         db = mc.get_default_database()
         mc.drop_database(db.name)
-    except Exception, ex:
+    except Exception as ex:
         pass
-
 
 
 @test.skipIf(not os.environ.get('MONGO_TESTDB_URL'),
@@ -40,7 +41,7 @@ class TestSchemaModels(test.TestCase):
         self.mc.close()
         self.mc = None
 
-    def load_schema(self, name, location, ns="urn:experiments", 
+    def load_schema(self, name, location, ns="urn:experiments",
                     content="<schema />"):
         schema = models.SchemaCommon(namespace=ns, name=name, current=1)
         schema.save()
@@ -48,16 +49,16 @@ class TestSchemaModels(test.TestCase):
                                          location=location,
                                          status=RECORD.IS_CURRENT,
                                          content=content, digest="xxx",
-                          version=models.SchemaVersion.next_version_for(name))
+                                         version=models.SchemaVersion.next_version_for(name))
         schemaVer.save()
 
     def test_load_schema(self):
         ns = "urn:experiments"
-        #pdb.set_trace()
+        # pdb.set_trace()
         self.load_schema("goober", "goober.xsd", ns)
 
-        ver = models.SchemaVersion.objects.\
-                     filter(status__ne=RECORD.DELETED).filter(name="goober")
+        ver = models.SchemaVersion.objects. \
+            filter(status__ne=RECORD.DELETED).filter(name="goober")
         self.assertEquals(len(ver), 1)
         ver = ver[0]
         self.assertEquals(ver.name, "goober")
@@ -75,18 +76,18 @@ class TestSchemaModels(test.TestCase):
     def test_load_template(self):
         ns = "urn:experiments"
         self.test_load_schema()
-        ver = models.SchemaVersion.objects.\
-                     filter(status__ne=RECORD.DELETED).filter(name="goober")[0]
-        
+        ver = models.SchemaVersion.objects. \
+            filter(status__ne=RECORD.DELETED).filter(name="goober")[0]
+
         tmpl = models.TemplateCommon(name="goobers", current=1,
-                                      root="{urn:experiments}root")
+                                     root="{urn:experiments}root")
         tmpl.save()
         tmplver = models.TemplateVersion(name=tmpl.name, common=tmpl,
                                          schema=ver, label="blah")
         tmplver.save()
-                                         
-        ver = models.TemplateVersion.objects.\
-                     filter(deleted=False).filter(name="goobers")
+
+        ver = models.TemplateVersion.objects. \
+            filter(deleted=False).filter(name="goobers")
         self.assertEquals(len(ver), 1)
         ver = ver[0]
         self.assertEquals(ver.name, "goobers")
@@ -117,9 +118,9 @@ class TestSchemaModels(test.TestCase):
         self.test_load_schema()
         sc = models.SchemaCommon.objects.get(name=name)
         newver = models.SchemaVersion(name=name, common=sc, location=loc,
-                                      status=RECORD.AVAILABLE, 
+                                      status=RECORD.AVAILABLE,
                                       content="<schema></schema>", digest="yyz",
-                          version=models.SchemaVersion.next_version_for(name))
+                                      version=models.SchemaVersion.next_version_for(name))
         newver.save()
 
         svs = models.SchemaVersion.objects.filter(name='goober')
@@ -149,14 +150,14 @@ class TestSchemaModels(test.TestCase):
 
         sc = models.SchemaCommon.objects.get(name='goober')
         newver = models.SchemaVersion(name='goober', common=sc, location='g.xsd',
-                                      status=RECORD.AVAILABLE, 
+                                      status=RECORD.AVAILABLE,
                                       content="<schema></schema>", digest="yyz",
-                         version=models.SchemaVersion.next_version_for('goober'))
+                                      version=models.SchemaVersion.next_version_for('goober'))
         newver.save()
         self.assertEquals(models.SchemaVersion.next_version_for('goober'), 3)
-        
+
         self.assertEquals(models.SchemaVersion.next_version_for('foofoo'), 1)
-        
+
     def test_find(self):
         ns = "urn:experiments"
         self.test_load_schema()
@@ -164,7 +165,7 @@ class TestSchemaModels(test.TestCase):
         self.assertEquals(len(found), 1)
         self.assertEquals(found[0].namespace, ns)
         self.assertEquals(found[0].name, "goober")
-        
+
     def test_find_one(self):
         ns = "urn:experiments"
         self.test_load_schema()
@@ -182,9 +183,9 @@ class TestSchemaModels(test.TestCase):
         self.test_load_schema()
         sc = models.SchemaCommon.objects.get(name=name)
         newver = models.SchemaVersion(name=name, common=sc, location=loc,
-                                      status=RECORD.AVAILABLE, 
+                                      status=RECORD.AVAILABLE,
                                       content="<schema></schema>", digest="yyz",
-                          version=models.SchemaVersion.next_version_for(name))
+                                      version=models.SchemaVersion.next_version_for(name))
         newver.save()
 
         curs = models.SchemaVersion.get_all_current()
@@ -198,24 +199,24 @@ class TestSchemaModels(test.TestCase):
         found = models.Schema.get_all_by_namespace(ns)
         self.assertEquals(len(found), 1)
         self.assertEquals(found[0].namespace, ns)
-        
+
         found = models.Schema.get_all_by_namespace("goob")
         self.assertEquals(len(found), 0)
-        
+
     def test_get_by_name(self):
         name = "goober"
         self.test_load_schema()
         found = models.Schema.get_by_name(name)
         self.assertIsNotNone(found)
         self.assertEquals(found.name, name)
-        
+
         found = models.Schema.get_by_name(name, version=1)
         self.assertIsNotNone(found)
         self.assertEquals(found.name, name)
-        
+
         found = models.Schema.get_by_name(name, version=2)
         self.assertIsNone(found)
-        
+
         found = models.Schema.get_by_name("goob")
         self.assertIsNone(found)
 
@@ -227,9 +228,9 @@ class TestSchemaModels(test.TestCase):
         sc = models.SchemaCommon.objects.get(name=name)
 
         newver = models.SchemaVersion(name=name, common=sc, location=loc,
-                                      status=RECORD.AVAILABLE, 
+                                      status=RECORD.AVAILABLE,
                                       content="<schema></schema>", digest="yyz",
-                          version=models.SchemaVersion.next_version_for(name))
+                                      version=models.SchemaVersion.next_version_for(name))
         newver.save()
 
         first = models.Schema.get_by_name(name)
@@ -262,9 +263,9 @@ class TestSchemaModels(test.TestCase):
         self.test_load_schema()
         sc = models.SchemaCommon.objects.get(name=name)
         newver = models.SchemaVersion(name=name, common=sc, location=loc,
-                                      status=RECORD.AVAILABLE, 
+                                      status=RECORD.AVAILABLE,
                                       content="<schema></schema>", digest="yyz",
-                          version=models.SchemaVersion.next_version_for(name))
+                                      version=models.SchemaVersion.next_version_for(name))
         newver.save()
 
         first = models.Schema.get_by_name(name, 1)
@@ -297,16 +298,16 @@ class TestSchemaModels(test.TestCase):
     def test_simple_find_includes(self):
         # note: more complex testing of this find_including_schema_names() is
         #   in test_multi.py
-        
+
         name = "goober"
         loc = "goober.xsd"
         content = "<schema />"
         self.test_load_schema()
         sc = models.SchemaCommon.objects.get(name=name)
         newver = models.SchemaVersion(name=name, common=sc, location=loc,
-                                      status=RECORD.AVAILABLE, 
+                                      status=RECORD.AVAILABLE,
                                       content="<schema></schema>", digest="yyz",
-                          version=models.SchemaVersion.next_version_for(name))
+                                      version=models.SchemaVersion.next_version_for(name))
         newver.save()
 
         first = models.Schema.get_by_name(name)
@@ -320,20 +321,20 @@ class TestSchemaModels(test.TestCase):
         self.assertEquals(first.find_including_schema_names(), [])
         second = models.Schema.get_by_name('foofoo')
         self.assertEquals(second.find_including_schema_names(), ['goober'])
-        
+
     def test_simple_find_imports(self):
         # note: more complex testing of this find_importing_schema_names() is
         #   in test_multi.py
-        
+
         name = "goober"
         loc = "goober.xsd"
         content = "<schema />"
         self.test_load_schema()
         sc = models.SchemaCommon.objects.get(name=name)
         newver = models.SchemaVersion(name=name, common=sc, location=loc,
-                                      status=RECORD.AVAILABLE, 
+                                      status=RECORD.AVAILABLE,
                                       content="<schema></schema>", digest="yyz",
-                          version=models.SchemaVersion.next_version_for(name))
+                                      version=models.SchemaVersion.next_version_for(name))
         newver.save()
 
         first = models.Schema.get_by_name(name)
@@ -347,13 +348,11 @@ class TestSchemaModels(test.TestCase):
         self.assertEquals(first.find_importing_schema_names(), [])
         second = models.Schema.get_by_name('foofoo')
         self.assertEquals(second.find_importing_schema_names(), ['goober'])
-        
-        
+
 
 @test.skipIf(not os.environ.get('MONGO_TESTDB_URL'),
              "test mongodb not available")
 class TestTemplateModels(test.TestCase):
-
     mc = None
 
     def setUp(self):
@@ -367,27 +366,27 @@ class TestTemplateModels(test.TestCase):
     def test_load_template(self):
         nm = "experiments"
         ns = "urn:experiments"
-        #pdb.set_trace()
+        # pdb.set_trace()
         schema = models.SchemaCommon(namespace=ns, name="goober", current=1)
-                                      
+
         schema.save()
         schemaVer = models.SchemaVersion(name="goober", common=schema,
                                          location="goober.xsd",
                                          content="<schema />", digest="xxx",
-                         version=models.SchemaVersion.next_version_for('goober'))
+                                         version=models.SchemaVersion.next_version_for('goober'))
         schemaVer.save()
-        
-        #pdb.set_trace()
+
+        # pdb.set_trace()
         tmpl = models.TemplateCommon(name=nm, root="{urn:experiments}lab",
                                      current=1)
-                                      
+
         tmpl.save()
-        tmplVer = models.TemplateVersion(name=nm, common=tmpl,schema=schemaVer,
+        tmplVer = models.TemplateVersion(name=nm, common=tmpl, schema=schemaVer,
                                          label="Title")
         tmplVer.save()
 
-        ver = models.TemplateVersion.objects.\
-                     filter(deleted=False).filter(name=nm)
+        ver = models.TemplateVersion.objects. \
+            filter(deleted=False).filter(name=nm)
         self.assertEquals(len(ver), 1)
         ver = ver[0]
         self.assertEquals(ver.name, nm)
@@ -424,14 +423,14 @@ class TestTemplateModels(test.TestCase):
         self.assertEquals(len(found), 1)
         self.assertEquals(found[0].name, nm)
         self.assertEquals(found[0].label, "Title")
-        
+
     def test_find_one(self):
         nm = "experiments"
         self.test_load_template()
         found = models.Template._find_one(name=nm, deleted=False, label="Title")
         self.assertEquals(found.name, nm)
         self.assertEquals(found.label, "Title")
-        
+
         found = models.Schema._find_one(name=nm, deleted=True)
         self.assertIsNone(found)
 
@@ -441,25 +440,27 @@ class TestTemplateModels(test.TestCase):
         found = models.Template.get_by_name(name)
         self.assertIsNotNone(found)
         self.assertEquals(found.name, name)
-        
+
         found = models.Template.get_by_name(name, version=1)
         self.assertIsNotNone(found)
         self.assertEquals(found.name, name)
-        
+
         found = models.Template.get_by_name(name, version=2)
         self.assertIsNone(found)
-        
+
         found = models.Template.get_by_name("goob")
         self.assertIsNone(found)
 
 
 TESTS = "TestSchemaModels TestTemplateModels".split()
 
+
 def test_suite():
     suite = test.TestSuite()
     suite.addTests([test.makeSuite(TestSchemaModels)])
     suite.addTests([test.makeSuite(TestTemplateModels)])
     return suite
+
 
 if __name__ == '__main__':
     test.main()

@@ -1,15 +1,17 @@
 # import mgi.settings as settings
 # from django import test
+import os
 import unittest as test
-import os, pdb
+
 from mongoengine import connect
 
 if 'DJANGO_SETTINGS_MODULE' not in os.environ:
     os.environ['DJANGO_SETTINGS_MODULE'] = 'xmltemplate.settings'
 from xmltemplate import models
-from xmltemplate import api
+import api
 
 datadir = os.path.join(os.path.dirname(__file__), "data")
+
 
 class TestLoadSchemaDoc(test.TestCase):
 
@@ -50,7 +52,7 @@ class TestLoadSchemaDoc(test.TestCase):
         self.assertEquals(summ['version_comment'], schema.comment)
         self.assertEquals(summ['is_current'], schema.iscurrent)
         self.assertEquals(summ['is_deleted'], schema.deleted)
-        
+
     def test_makecurrent(self):
         filename = "mylab.xsd"
         content = self.get_file_content(filename)
@@ -180,11 +182,11 @@ class TestLoadSchemaDoc(test.TestCase):
         self.assertIn('hints', summ)
 
         # now remedy the situation using loc_finder
-        use = { "experiments.xsd": "experiments" }
-        #pdb.set_trace()
+        use = {"experiments.xsd": "experiments"}
+        # pdb.set_trace()
         summ = api.loadSchemaDoc(content, "micro", filename, loc_finder=use)
         self.assertTrue(summ['ok'])
-        
+
     def test_confused_import(self):
         filename = "microscopy.xsd"
         content = self.get_file_content(filename)
@@ -215,10 +217,11 @@ class TestLoadSchemaDoc(test.TestCase):
         self.assertIn('hints', summ)
 
         # now remedy the situation using loc_finder
-        use = { "urn:experiments": "experiments" }
-        #pdb.set_trace()
+        use = {"urn:experiments": "experiments"}
+        # pdb.set_trace()
         summ = api.loadSchemaDoc(content, "micro", filename, ns_finder=use)
         self.assertTrue(summ['ok'])
+
 
 class TestAllSchemaDocs(test.TestCase):
 
@@ -302,7 +305,7 @@ class TestAllSchemaDocs(test.TestCase):
         self.assertEquals(summ['version_comment'], 'initial version')
         self.assertTrue(summ['is_current'])
         self.assertFalse(summ['is_deleted'])
-        
+
     def test_add_withlocfinder(self):
         # now let's create two differnt schemas the same location & namespace...
         filename = 'experiments.xsd'
@@ -313,14 +316,14 @@ class TestAllSchemaDocs(test.TestCase):
         schema = models.Schema.get_by_name("experiments")
         scs = models.SchemaCommon.get_all_by_namespace(schema.namespace)
         self.assertEqual(len(scs), 2)
-        
+
         # add with loc_finder
         filename = "microscopy-incl.xsd"
         content = self.get_file_content(filename)
-        use = { "experiments.xsd": "experiments" }
+        use = {"experiments.xsd": "experiments"}
         summ = api.AllSchemaDocs.add(content, "micro", filename, loc_finder=use)
         self.assertTrue(summ['ok'])
-        
+
     def test_add_withnsfinder(self):
         # now let's create two differnt schemas the same location & namespace...
         filename = 'experiments.xsd'
@@ -331,16 +334,17 @@ class TestAllSchemaDocs(test.TestCase):
         schema = models.Schema.get_by_name("experiments")
         scs = models.SchemaCommon.get_all_by_namespace(schema.namespace)
         self.assertEqual(len(scs), 2)
-        
+
         # add with ns_finder
         filename = "microscopy.xsd"
         content = self.get_file_content(filename)
-        use = { "urn:experiments": "experiments" }
+        use = {"urn:experiments": "experiments"}
         summ = api.AllSchemaDocs.add(content, "micro", filename, ns_finder=use)
         self.assertTrue(summ['ok'])
 
+
 class TestSchemaDoc(test.TestCase):
-    
+
     def setUp(self):
         self.mc = setUpMongo()
 
@@ -370,11 +374,10 @@ class TestSchemaDoc(test.TestCase):
         schema = models.Schema.get_by_name('mylab', 3)
         schema.make_current()
         self.assertEquals(api.SchemaDoc.versions(schema), [1, 2, 3])
-        
+
         schema = models.Schema.get_by_name('mylab', 2)
         schema.delete()
         self.assertEquals(api.SchemaDoc.versions(schema), [1, 3])
-        
 
     def test_summarize(self):
         filename = "mylab.xsd"
@@ -410,7 +413,7 @@ class TestSchemaDoc(test.TestCase):
         self.assertEqual(summ['description'], schema.description)
         self.assertEqual(summ['version_comment'], schema.comment)
         self.assertEqual(summ['versions_available'], [1, 3])
-        
+
     def test_add(self):
         filename = "mylab.xsd"
         content = self.get_file_content(filename)
@@ -475,14 +478,14 @@ class TestSchemaDoc(test.TestCase):
         schema = models.Schema.get_by_name("experiments")
         scs = models.SchemaCommon.get_all_by_namespace(schema.namespace)
         self.assertEqual(len(scs), 2)
-        
+
         # add with loc_finder
         filename = "microscopy-incl.xsd"
         content = self.get_file_content(filename)
-        use = { "experiments.xsd": "experiments" }
+        use = {"experiments.xsd": "experiments"}
         summ = api.SchemaDoc.add(content, "micro", filename, loc_finder=use)
         self.assertTrue(summ['ok'])
-        
+
     def test_add_withnsfinder(self):
         # now let's create two differnt schemas the same location & namespace...
         filename = 'experiments.xsd'
@@ -493,11 +496,11 @@ class TestSchemaDoc(test.TestCase):
         schema = models.Schema.get_by_name("experiments")
         scs = models.SchemaCommon.get_all_by_namespace(schema.namespace)
         self.assertEqual(len(scs), 2)
-        
+
         # add with ns_finder
         filename = "microscopy.xsd"
         content = self.get_file_content(filename)
-        use = { "urn:experiments": "experiments" }
+        use = {"urn:experiments": "experiments"}
         summ = api.SchemaDoc.add(content, "micro", filename, ns_finder=use)
         self.assertTrue(summ['ok'])
 
@@ -507,7 +510,7 @@ class TestSchemaDoc(test.TestCase):
         summ = api.SchemaDoc.add(content, "mylab", filename, "for your lab")
 
         self.assertEquals(api.SchemaDoc.get_view("mylab", "versions"), [1])
-        
+
         summ = api.SchemaDoc.get_view("mylab", "summary")
         self.assertEqual(summ['name'], "mylab")
         self.assertEqual(summ['current_version'], 1)
@@ -515,7 +518,7 @@ class TestSchemaDoc(test.TestCase):
         self.assertEqual(summ['description'], "for your lab")
         self.assertEqual(summ['version_comment'], "initial version")
         self.assertEqual(summ['versions_available'], [1])
-        
+
         summ = api.SchemaDoc.get_view("mylab")
         self.assertEqual(summ['name'], "mylab")
         self.assertEqual(summ['current_version'], 1)
@@ -525,12 +528,12 @@ class TestSchemaDoc(test.TestCase):
         self.assertEqual(summ['versions_available'], [1])
         self.assertIn('content', summ)
         self.assertIn('<?xml', summ['content'])
-        
+
         content = api.SchemaDoc.get_view("mylab", 'xml')
         self.assertIn('<?xml', content)
         content = api.SchemaDoc.get_view("mylab", 'xsd')
         self.assertIn('<?xml', content)
-        
+
     def test_set_desc(self):
         filename = "mylab.xsd"
         content = self.get_file_content(filename)
@@ -541,7 +544,8 @@ class TestSchemaDoc(test.TestCase):
         self.assertEqual(summ['description'], "for my lab")
         schema = models.Schema.get_by_name("mylab")
         self.assertEqual(schema.desc, "for my lab")
-        
+
+
 class TestSchemaDocVersion(test.TestCase):
 
     def setUp(self):
@@ -585,7 +589,7 @@ class TestSchemaDocVersion(test.TestCase):
         self.assertEqual(summ['description'], "for your lab")
         self.assertEqual(summ['version'], 1)
         self.assertEqual(summ['version_comment'], "initial version")
-        
+
         summ = api.SchemaDocVersion.get_view("mylab", 1)
         self.assertEqual(summ['name'], "mylab")
         self.assertEqual(summ['location'], filename)
@@ -594,12 +598,12 @@ class TestSchemaDocVersion(test.TestCase):
         self.assertEqual(summ['version_comment'], "initial version")
         self.assertIn('content', summ)
         self.assertIn('<?xml', summ['content'])
-        
+
         content = api.SchemaDocVersion.get_view("mylab", 1, 'xml')
         self.assertIn('<?xml', content)
         content = api.SchemaDocVersion.get_view("mylab", 1, 'xsd')
         self.assertIn('<?xml', content)
-        
+
         summ = api.loadSchemaDoc(content, "mylab", filename, "next version")
         summ = api.SchemaDocVersion.get_view("mylab", 1, "summary")
         self.assertEqual(summ['version'], 1)
@@ -671,7 +675,7 @@ class TestSchemaDocVersion(test.TestCase):
         self.assertEqual(summ['location'], 'outer space')
         self.assertEqual(summ['version_comment'], "boo")
 
-        
+
 class TestSettings(test.TestCase):
 
     def test_testing(self):
@@ -685,20 +689,23 @@ class TestSettings(test.TestCase):
 def setUpMongo():
     return connect(host=os.environ['MONGO_TESTDB_URL'])
 
+
 def tearDownMongo(mc):
     try:
         db = mc.get_default_database()
         mc.drop_database(db.name)
-    except Exception, ex:
+    except Exception as ex:
         pass
 
-    
+
 TESTS = "TestLoadSchemaDco TestAllSchemaDocs TestSchemaDoc TestSchemaDocVersion TestSettings".split()
+
 
 def test_suite():
     suite = test.TestSuite()
     suite.addTests([test.makeSuite(TestLoadSchemaDco)])
     return suite
+
 
 if __name__ == '__main__':
     test.main()

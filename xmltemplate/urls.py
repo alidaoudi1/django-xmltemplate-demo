@@ -3,7 +3,7 @@ from django.contrib import admin
 from xmltemplate import api
 
 urlpatterns = [
-    url(r'^admin/', include(admin.site.urls)),
+    url(r'^admin/', admin.site.urls),
     url(r'^schemas/$', api.AllSchemaDocs.as_view()),
     url(r'^schemas/(?P<name>[^/]+)/?$', api.SchemaDoc.as_view()),
     url(r'^schemas/(?P<name>[^/]+)/(?P<version>\d+)/?$',

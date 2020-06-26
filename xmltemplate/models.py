@@ -5,6 +5,8 @@ curation templates.
 
 from django_mongoengine import fields, Document
 from django.db.models import Max
+from mongoengine import errors as mongoengine_errors
+
 
 class SchemaCommon(Document):
     """
@@ -42,9 +44,19 @@ class SchemaCommon(Document):
         :param name str:           the user-given name for the schema to look up
         :param allowdeleted bool:  if true, include records where current <= 0
         """
-        out = SchemaCommon.objects.filter(name=name)
-        if not allowdeleted:
-            out = out.filter(current__gt=0)
+        try:
+            return SchemaCommon.objects.filter(name=name)
+        except mongoengine_errors.DoesNotExist as e:
+            out = {
+                'ok': False,
+            }
+            return out
+
+        except Exception as ex:
+            out = {
+                'ok': False,
+            }
+            return out
         if len(out) > 0:
             return out[0]
         return None
@@ -79,7 +91,6 @@ class SchemaCommon(Document):
         for sc in SchemaCommon.objects.all():
             out.add(sc.namespace)
         return list(out)
-    
 
     @classmethod
     def get_names(self):
@@ -132,8 +143,8 @@ class SchemaVersion(Document):
     :property comment str:    A brief (displayable) comment noting what is 
                               different about this version.
     """
-    name      = fields.StringField(unique_with=['version'], required=True)
-    version   = fields.IntField(unique_with=['name'], required=True)
+    name      = fields.StringField(unique_with=['version'], blank=False)
+    version   = fields.IntField(unique_with=['name'],  blank=False)
     common    = fields.ReferenceField(SchemaCommon)
     location  = fields.StringField(blank=True)
     content   = fields.StringField(blank=False)
@@ -198,7 +209,7 @@ class SchemaVersion(Document):
         try: 
             return max(map(lambda v: v.version,
                            SchemaVersion.objects.filter(name=name))) + 1
-        except ValueError, ex:
+        except ValueError as ex:
             # none found with this name
             return 1
         

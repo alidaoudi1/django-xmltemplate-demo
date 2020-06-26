@@ -7,12 +7,14 @@ implementations to be leveraged.   Currently, the default implementation is
 based on lxml.  
 """
 import os, sys, abc
-from cStringIO import StringIO
+from io import StringIO
 from abc import abstractmethod, ABCMeta
-from lxml import etree
 from collections import OrderedDict
+from io import BytesIO
+import xml.etree.ElementTree as ET
+import lxml.etree as etree
 
-from .models import Schema
+from xmltemplate.models import Schema
 
 XSD_NS = "http://www.w3.org/2001/XMLSchema"
 
@@ -253,8 +255,8 @@ class lxmlValidator(BaseValidator):
         xp = etree.XMLParser()  # (any options needed?)
         xp.resolvers.add(_SchemaResolver(includes, imports))
         try:
-            tree = etree.parse(StringIO(schema_content), parser=xp)
-        except etree.XMLSyntaxError, ex:
+            tree = etree.parse(BytesIO(schema_content.encode('utf-8')), parser=xp)
+        except etree.XMLSyntaxError as ex:
             raise ValidationError("XML Schema document is not well-formed: " +
                                   ex.message, [ex.message])
 
@@ -263,7 +265,7 @@ class lxmlValidator(BaseValidator):
         
         try:
             self._valid8r = etree.XMLSchema(tree)
-        except etree.XMLSchemaError, ex:
+        except etree.XMLSchemaError as ex:
             raise SchemaValidationError("XML Schema compliance error: " +
                                         ex.message, [ex.message])
 
@@ -282,9 +284,14 @@ class lxmlValidator(BaseValidator):
         exception if it is not well-formed.  
         """
         try:
-            return etree.parse(StringIO(xmlstr))
-        except etree.XMLSyntaxError, ex:
-            raise ValidationError("XML is not well-formed: "+ex.message,
-                                  [ex.message])
+            xml_string = BytesIO(xmlstr.encode('utf-8'))
+        except Exception:
+            xml_string = BytesIO(xmlstr)
+
+        try:
+            return etree.parse(xml_string)
+        except etree.XMLSyntaxError as ex:
+            raise ValidationError("XML is not well-formed: "+ex.msg,
+                                  [ex.msg])
 
 Validator = lxmlValidator

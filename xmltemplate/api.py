@@ -10,11 +10,9 @@ from rest_framework.response import Response
 from rest_framework import authentication, permissions, status
 from rest_framework.parsers import JSONParser, BaseParser
 from rest_framework.renderers import JSONRenderer, BaseRenderer
-
-from . import models
-from .schema import (SchemaLoader, ValidationError, SchemaIngestError,
+from schema import (SchemaLoader, ValidationError, SchemaIngestError,
                      UnresolvedSchemaInclude)
-
+from xmltemplate import models
 logger = logging.getLogger(__name__)
 
 
@@ -153,7 +151,7 @@ def loadSchemaDoc(content, name, location=None, about=None,
             out['message'] = \
                   "Schema document, {0}, successfully loaded".format(schema.name)
 
-    except (ValidationError, SchemaIngestError), ex:
+    except (ValidationError, SchemaIngestError) as ex:
         out['ok'] = False
         out['message'] = "Validation Error: " + ex.message
         out['errors'] = [ ex.message ]
@@ -290,7 +288,7 @@ class AllSchemaDocs(APIView):
         """
         out = { 'ok', True }
         
-        if isinstance(request.DATA, (str, unicode)):
+        if isinstance(request.DATA, str):
             # raw XML:  the XSD file contents
             data = {
                 'content': request.DATA,
@@ -478,7 +476,7 @@ class SchemaDoc(APIView):
         if not out:
             return Response({}, status=status.HTTP_404_NOT_FOUND)
         
-        if isinstance(out, (str, unicode)):
+        if isinstance(out, str):
             return Response( out, content_type='application/xml' )
         return Response( out )
 
@@ -486,7 +484,7 @@ class SchemaDoc(APIView):
         ns_finder = {}
         loc_finder = {}
         
-        if isinstance(request.DATA, (str, unicode)):
+        if isinstance(request.DATA, str):
             # raw XML:  the XSD file contents
             content = request.DATA
             location = request.GET.get('location')
@@ -680,7 +678,6 @@ class SchemaDocVersion(APIView):
 
         return cls.summarize( schema )
 
-
     def get(self, request, name, version, format=None):
         """
         handle a GET request to the SchemaDocs web service endpoint.  This 
@@ -689,7 +686,7 @@ class SchemaDocVersion(APIView):
         view = request.GET.get('view', 'full')
         try:
             version = int(version)
-        except ValueError, ex:
+        except ValueError as ex:
             out = {
                 'ok': False,
                 'message': 'schema not found: {0}/{1}'.format(name, version)
@@ -704,7 +701,7 @@ class SchemaDocVersion(APIView):
             }
             return Response(out, status=status.HTTP_404_NOT_FOUND)
 
-        if isinstance(out, (str, unicode)):
+        if isinstance(out, str):
             return Response( out, content_type='application/xml' )
 
         return Response( out )
@@ -715,7 +712,7 @@ class SchemaDocVersion(APIView):
         """
         try:
             version = int(version)
-        except ValueError, ex:
+        except ValueError as ex:
             out = {
                 'ok': False,
                 'message': 'schema not found: {0}/{1}'.format(name, version)
@@ -740,7 +737,7 @@ class SchemaDocVersion(APIView):
         out = None
         try:
             version = int(version)
-        except ValueError, ex:
+        except ValueError as ex:
             out = {
                 'ok': False,
                 'message': 'schema not found: {0}/{1}'.format(name, version)

@@ -3,15 +3,13 @@ a module that handles the business logic for loading schemas, elements,
 types, and templates
 """
 import types, os, hashlib
-from urlparse import urlparse
-from io import BytesIO
-from cStringIO import StringIO
+import urllib.parse as urlparse
 from collections import OrderedDict as ODict
-
+from io import BytesIO
 import requests
 from lxml import etree
 
-from .models import *
+from xmltemplate.models import *
 from validate import Validator, XSD_NS, ValidationError, SchemaValidationError
 
 class SchemaIngestError(Exception):
@@ -205,7 +203,7 @@ class SchemaLoader(object):
         """
         if not name:
             raise ValueError("SchemaLoader: missing name")
-        if not isinstance(schema_content, types.StringTypes):
+        if not isinstance(schema_content, str):
             raise TypeError("SchemaLoader: schema_content not a string: " +
                              str(schema_content))
         if schema_content == '':
@@ -361,7 +359,7 @@ class SchemaLoader(object):
             raise ValueError("Schema with this name not yet loaded: "+schemaname)
         if importable.namespace != namespace:
                 raise ValueError("The mismatched namespace for schema named " +
-                                 name + ":\n  " + importable.namespace + " != \n"
+                                 self.name + ":\n  " + importable.namespace + " != \n"
                                  + namespace)
         self.extern_by_ns[namespace] = schemaname
 
@@ -407,7 +405,7 @@ class SchemaLoader(object):
         # parse the schema and make sure it's valid
         try:
             self.xsd_validate()
-        except ValidationError, ex:
+        except ValidationError as ex:
             if len(self.errors) == 0:
                 # validation error apparently unrelated to missing includes
                 raise
@@ -502,7 +500,7 @@ class SchemaLoader(object):
         errors = []
         try:
             self.xsd_validate()
-        except ValidationError, ex:
+        except ValidationError as ex:
             errors.extend(ex.errors)
         return errors
 
@@ -664,7 +662,7 @@ class SchemaLoader(object):
 
         # look through this schema's includes and imports
         for include in (schema.includes + schema.imports):
-            found = _find_type_in_schemadoc(tpqname, include)
+            found = self._find_type_in_schemadoc(tpqname, include)
             if found is not None:
                 return found
         return None
@@ -823,7 +821,7 @@ class SchemaLoader(object):
                     # pull the content and check its hash
                     inclcontent = _retrieve_url_content(loc)
                     inclhash = self._calchash(inclcontent)
-                except Exception, ex:
+                except Exception as ex:
                     unresolved.append(
                         SchemaIngestError(
                             "Unable to retrieve schema at URL={0}: {1}".
@@ -844,7 +842,7 @@ class SchemaLoader(object):
                             self.includes.append(inclschema.load().name)
                             continue
                         
-                    except ValidationError, ex:
+                    except ValidationError as ex:
                         raise SchemaIngestError(
                            "Included schema at {0} has a validation issues: {1}".
                            format(urlloc, str(ex.errors)))
@@ -918,7 +916,7 @@ class SchemaLoader(object):
                 try:
                     impcontent = _retrieve_url_content(loc)
                     imphash = self._calchash(impcontent)
-                except Exception, ex:
+                except Exception as ex:
                     unresolved.append(
                         SchemaIngestError(
                             "Failed to retrieve imported schema ({0}) from {1}: {2}".
@@ -944,11 +942,11 @@ class SchemaLoader(object):
                         impschema = impschema.load()
                         self.imports[impschema.namespace] = impschema.name
 
-                    except ValidationError, ex:
+                    except ValidationError as ex:
                         raise ValidationError(
                             "Included schema at {0} has a validation issues: {1}".
                             format(urlloc, str(ex.errors)))
-                    except FixableErrorsRemain, ex:
+                    except FixableErrorsRemain as ex:
                         unresolved.extend( ex.errors )
 
         return unresolved
@@ -990,6 +988,6 @@ def _retrieve_url_content(url):
 
 
 def _calc_hash_on_string(datastr):
-    return hashlib.md5(datastr).hexdigest()
+    return hashlib.md5(datastr.encode('utf-8')).hexdigest()
 
     

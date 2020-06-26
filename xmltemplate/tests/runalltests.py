@@ -4,10 +4,10 @@
 """
 Run all of the unit tests for xmltemplate
 """
-import unittest, sys, os.path
+import unittest
 
-from xmltemplate.tests import test_models
 from xmltemplate.tests import test_schema
+from xmltemplate.tests import test_models
 from xmltemplate.tests import test_multi
 
 

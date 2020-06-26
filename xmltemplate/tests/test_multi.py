@@ -1,23 +1,25 @@
+import os
 import unittest as test
-import os, pdb
-from mongoengine import connect
 
+from mongoengine import connect
 from xmltemplate import models
 from xmltemplate import schema
 
 datadir = os.path.join(os.path.dirname(__file__), "data")
 
+
 def setUpMongo():
     return connect(host=os.environ['MONGO_TESTDB_URL'])
+
 
 def tearDownMongo(mc):
     try:
         db = mc.get_default_database()
         mc.drop_database(db.name)
-    except Exception, ex:
+    except Exception as  ex:
         pass
 
-    
+
 @test.skipIf(not os.environ.get('MONGO_TESTDB_URL'),
              "test mongodb not available")
 class TestMultiSchemas(test.TestCase):
@@ -121,7 +123,7 @@ class TestMultiSchemas(test.TestCase):
 
         schemafile = "res-app.xsd"
         schemapath = os.path.join(resmddir, schemafile)
-        #pdb.set_trace()
+        # pdb.set_trace()
         schema.SchemaLoader.load_from_file(schemapath, schemafile, schemafile)
 
         resmd = models.Schema.get_by_name("res-md.xsd")
@@ -141,7 +143,7 @@ class TestMultiSchemas(test.TestCase):
         # automatically loaded from the internet
         schemafile = "res-md.xsd"
         schemapath = os.path.join(resmddir, schemafile)
-        #pdb.set_trace()
+        # pdb.set_trace()
         schema.SchemaLoader.load_from_file(schemapath, schemafile, schemafile)
 
     def test_full_import(self):
@@ -171,42 +173,43 @@ class TestMultiSchemas(test.TestCase):
         resmd_ns = "http://schema.nist.gov/xml/res-md/1.0wd"
         acces_ns = "http://schema.nist.gov/xml/resmd-access/1.0wd"
         access_q = "{http://schema.nist.gov/xml/resmd-access/1.0wd}"
-        res = models.GlobalType.objects.filter(namespace=resmd_ns)\
-                                       .get(name='Resource')
+        res = models.GlobalType.objects.filter(namespace=resmd_ns) \
+            .get(name='Resource')
         subtps = res.list_subtypes(False)
         self.assertEquals(len(subtps), 1)
-        self.assertEquals(subtps[0], access_q+"AccessibleResource")
+        self.assertEquals(subtps[0], access_q + "AccessibleResource")
 
-        role = models.GlobalType.objects.filter(namespace=resmd_ns)\
-                                        .get(name='Role')
+        role = models.GlobalType.objects.filter(namespace=resmd_ns) \
+            .get(name='Role')
         subtps = role.list_subtypes(False)
         self.assertEquals(len(subtps), 2)
-        self.assertIn(access_q+"Software", subtps)
-        self.assertIn(access_q+"ServiceAPI", subtps)
+        self.assertIn(access_q + "Software", subtps)
+        self.assertIn(access_q + "ServiceAPI", subtps)
 
-        role = models.GlobalType.objects.filter(namespace=resmd_ns)\
-                                        .get(name='Role')
+        role = models.GlobalType.objects.filter(namespace=resmd_ns) \
+            .get(name='Role')
         subtps = role.list_subtypes(True)
         self.assertEquals(len(subtps), 4)
-        self.assertIn(access_q+"SoftwareRoleTypeRestriction", subtps)
-        self.assertIn(access_q+"Software", subtps)
-        self.assertIn(access_q+"ServiceAPIRoleTypeRestriction", subtps)
-        self.assertIn(access_q+"ServiceAPI", subtps)
-        
+        self.assertIn(access_q + "SoftwareRoleTypeRestriction", subtps)
+        self.assertIn(access_q + "Software", subtps)
+        self.assertIn(access_q + "ServiceAPIRoleTypeRestriction", subtps)
+        self.assertIn(access_q + "ServiceAPI", subtps)
 
 
 # TODO:  check loading of types, tracking of ancestors
 #        review when types are incomplete; handle ambiguities
 #        support finding all subtypes (abstract?)
 #        test templates
-        
+
 
 TESTS = ["TestMultiSchemas"]
+
 
 def test_suite():
     suite = test.TestSuite()
     suite.addTests([test.makeSuite(TestMultiSchemas)])
     return suite
+
 
 if __name__ == '__main__':
     test.main()
