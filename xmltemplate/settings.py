@@ -79,6 +79,12 @@ if UNIT_TESTING:
     # turn off logging while unit testing
     LOGGING['loggers'] = {}
 
+MONGO_USER = "test_user"
+MONGO_PASSWORD = "test_password"
+DB_NAME = "testdb"
+DB_SERVER = "localhost"
+MONGODB_URI = "mongodb://" + MONGO_USER + ":" + MONGO_PASSWORD + "@" + DB_SERVER + "/" + DB_NAME
+connect(DB_NAME, host=MONGODB_URI)
 
 SECRET_KEY = '-qmfv8(j$jhn5!*4j10c28gp4o8o()4c8uyfukod=!@9-d*2kp'
 

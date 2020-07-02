@@ -18,6 +18,7 @@ from xmltemplate.models import Schema
 
 XSD_NS = "http://www.w3.org/2001/XMLSchema"
 
+
 class ValidationError(Exception):
     """
     An indication that the XML is invalid.
@@ -35,11 +36,13 @@ class ValidationError(Exception):
         """
         self.errors.append(errmsg)
 
+
 class SchemaValidationError(ValidationError):
     """
     An indication that the XML Schema is invalid.
     """
     pass
+
 
 
 class _SchemaResolver(etree.Resolver):
@@ -80,7 +83,8 @@ class _SchemaResolver(etree.Resolver):
             return self.resolve_string(schema.content, context)
 
         return None
-            
+
+
 class SchemaProvider(object):
     """
     a class for providing schema documents to be used for validating.  
@@ -267,7 +271,7 @@ class lxmlValidator(BaseValidator):
             self._valid8r = etree.XMLSchema(tree)
         except etree.XMLSchemaError as ex:
             raise SchemaValidationError("XML Schema compliance error: " +
-                                        ex.message, [ex.message])
+                                      str(ex), [str(ex)])
 
     def validate(self, inst_content):
         """

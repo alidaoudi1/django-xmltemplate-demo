@@ -9,8 +9,13 @@ datadir = os.path.join(os.path.dirname(__file__), "data")
 
 
 def setUpMongo():
-    return connect(host=os.environ['MONGO_TESTDB_URL'])
 
+    MONGO_USER = "myUserAdmin"
+    MONGO_PASSWORD = "abc123"
+    DB_NAME = "testdb"
+    DB_SERVER = "localhost"
+    MONGODB_URI = "mongodb://" + MONGO_USER + ":" + MONGO_PASSWORD + "@" + DB_SERVER + "/" + DB_NAME +"?authSource=admin"
+    return connect(DB_NAME, host=MONGODB_URI)
 
 def tearDownMongo(mc):
     try:
@@ -20,8 +25,6 @@ def tearDownMongo(mc):
         pass
 
 
-@test.skipIf(not os.environ.get('MONGO_TESTDB_URL'),
-             "test mongodb not available")
 class TestMultiSchemas(test.TestCase):
 
     def setUp(self):

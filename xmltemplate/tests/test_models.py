@@ -10,7 +10,12 @@ from xmltemplate import models
 # from mgi import settings
 
 def setUpMongo():
-    return connect(host=os.environ['MONGO_TESTDB_URL'])
+    MONGO_USER = "myUserAdmin"
+    MONGO_PASSWORD = "abc123"
+    DB_NAME = "testdb"
+    DB_SERVER = "localhost"
+    MONGODB_URI = "mongodb://" + MONGO_USER + ":" + MONGO_PASSWORD + "@" + DB_SERVER + "/" + DB_NAME +"?authSource=admin"
+    return connect(DB_NAME, host=MONGODB_URI)
 
 
 def tearDownMongo(mc):
@@ -21,8 +26,8 @@ def tearDownMongo(mc):
         pass
 
 
-@test.skipIf(not os.environ.get('MONGO_TESTDB_URL'),
-             "test mongodb not available")
+#@test.skipIf(not os.environ.get('MONGO_TESTDB_URL'),
+ #            "test mongodb not available")
 class TestSchemaModels(test.TestCase):
 
     # mc = None
@@ -125,7 +130,7 @@ class TestSchemaModels(test.TestCase):
 
         svs = models.SchemaVersion.objects.filter(name='goober')
         vers = map(lambda s: s.version, svs)
-        self.assertEquals(len(vers), 2)
+        self.assertEquals(len(list(vers)), 2)
         vers.sort()
         self.assertEquals(vers, [1, 2])
         schema = models.Schema.get_by_name('goober', 1)
