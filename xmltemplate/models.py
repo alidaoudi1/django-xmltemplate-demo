@@ -433,8 +433,8 @@ class Schema(object):
         cs = SchemaCommon.get_by_name(name)
         if not cs:
             return None
-
-        vers = SchemaVersion.objects.filter(name=cs.name)
+        cs = SchemaCommon.get_by_name(name)[0]
+        vers = SchemaVersion.objects.filter(name=name)
         
         if cs.current <= 0:
             if not allowdeleted:

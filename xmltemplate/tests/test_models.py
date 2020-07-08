@@ -26,8 +26,8 @@ def tearDownMongo(mc):
         pass
 
 
-#@test.skipIf(not os.environ.get('MONGO_TESTDB_URL'),
- #            "test mongodb not available")
+@test.skipIf(not os.environ.get('MONGO_TESTDB_URL'),
+             "test mongodb not available")
 class TestSchemaModels(test.TestCase):
 
     # mc = None
@@ -129,7 +129,7 @@ class TestSchemaModels(test.TestCase):
         newver.save()
 
         svs = models.SchemaVersion.objects.filter(name='goober')
-        vers = map(lambda s: s.version, svs)
+        vers = list(map(lambda s: s.version, svs))
         self.assertEquals(len(list(vers)), 2)
         vers.sort()
         self.assertEquals(vers, [1, 2])
@@ -140,7 +140,7 @@ class TestSchemaModels(test.TestCase):
 
         self.load_schema("foofoo", "foo.xsd")
         svs = models.SchemaVersion.objects.filter(name='foofoo')
-        vers = map(lambda s: s.version, svs)
+        vers = list(map(lambda s: s.version, svs))
         self.assertEquals(len(vers), 1)
         vers.sort()
         self.assertEquals(vers, [1])
