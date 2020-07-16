@@ -13,6 +13,6 @@ from xmltemplate.tests import test_multi
 
 if __name__ == '__main__':
     tr = unittest.TextTestRunner()
-    for mod in [test_models]:
+    for mod in [test_multi]:
         print("{0}: ".format(mod.__name__))
         tr.run(mod.test_suite())

@@ -182,11 +182,10 @@ class TestSchemaLoader(test.TestCase):
         self.assertEquals(len(loader.prefixes), 2)
 
 
-@test.skipIf(not os.environ.get('MONGO_TESTDB_URL'),
-             "test mongodb not available")
 class TestSchemaLoaderDB(test.TestCase):
 
     def setUp(self):
+
         self.mc = setUpMongo()
 
     def tearDown(self):
@@ -353,7 +352,7 @@ class TestSchemaLoaderDB(test.TestCase):
         loader.xml_validate()
         # pdb.set_trace()
         cts = loader.tree.findall("//xs:complexType", {"xs": schema.XSD_NS})
-        ct = filter(lambda t: t.get("name") == "ElectronMicroscope", cts)
+        ct = list(filter(lambda t: t.get("name") == "ElectronMicroscope", cts))
         base = loader._get_super_type(ct[0])
         self.assertEquals(base, "{urn:experiments}Equipment")
 
@@ -469,7 +468,12 @@ class TestSchemaLoaderDB(test.TestCase):
 
 
 def setUpMongo():
-    return connect(host=os.environ['MONGO_TESTDB_URL'])
+    MONGO_USER = "myUserAdmin"
+    MONGO_PASSWORD = "abc123"
+    DB_NAME = "testdb"
+    DB_SERVER = "localhost"
+    MONGODB_URI = "mongodb://" + MONGO_USER + ":" + MONGO_PASSWORD + "@" + DB_SERVER + "/" + DB_NAME +"?authSource=admin"
+    return connect(DB_NAME, host=MONGODB_URI)
 
 
 def tearDownMongo(mc):

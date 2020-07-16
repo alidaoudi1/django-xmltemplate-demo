@@ -439,9 +439,9 @@ class SchemaLoader(object):
         """
         self.beprepared()
         includes = map(lambda i: "{0}::{1}".format(i[0],i[1]),
-                       self.includes.iteritems())
+                       self.includes.items())
         imports  = map(lambda i: "{0}::{1}".format(i[0],i[1]),
-                       self.imports.iteritems())
+                       self.imports.items())
 
         sc = SchemaCommon.get_by_name(name=self.name, allowdeleted=True) 
         if not sc:
@@ -723,10 +723,10 @@ class SchemaLoader(object):
         gltps = self._trace_anscestors( gltps )
         self.global_types = dict(
                    filter(lambda t: len(t[1]) == 0 or t[1][-1] != "__missing__",
-                          gltps.iteritems()) )
+                          gltps.items()) )
         incomplete.extend( map(lambda t: IncompleteType(t[0], t[1]),
                    filter(lambda t: len(t[1]) > 0 and t[1][-1] == "__missing__",
-                          gltps.iteritems())) )
+                          gltps.items())) )
 
         # Now make sure our global elements are all defined
         self.global_elems = {}
@@ -746,8 +746,8 @@ class SchemaLoader(object):
         if ln in self.global_types:
             return True
         matches = GlobalType.objects.filter(namespace=ns).filter(name=ln)
-        matches = filter(lambda t: t.version == t.schema.common.current and
-                                   t.schema.status != RECORD.DELETED, matches)
+        matches = list(filter(lambda t: t.version == t.schema.common.current and
+                                   t.schema.status != RECORD.DELETED, matches))
         return len(matches) > 0
 
     def check_namespace(self):
